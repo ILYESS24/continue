@@ -20,7 +20,18 @@ export default defineConfig({
       "partial-json":
         resolve(__dirname, "../core/node_modules/partial-json") ||
         resolve(__dirname, "node_modules/partial-json"),
+      // Resolve local packages - try dist first, then root
+      "@continuedev/config-yaml": resolve(
+        __dirname,
+        "../packages/config-yaml/dist/index.js",
+      ),
+      "@continuedev/terminal-security": resolve(
+        __dirname,
+        "../packages/terminal-security/dist/index.js",
+      ),
     },
+    // Preserve symlinks for local packages
+    preserveSymlinks: false,
   },
   build: {
     sourcemap: true,
