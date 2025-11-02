@@ -1,9 +1,9 @@
 {
   "version": 2,
-  "buildCommand": "bash cloudflare-build.sh",
+  "buildCommand": "bash vercel-build.sh",
   "outputDirectory": "gui/dist",
   "devCommand": null,
-  "installCommand": "npm ci",
+  "installCommand": "npm install",
   "framework": null,
   "rewrites": [
     {
