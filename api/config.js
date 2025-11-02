@@ -66,8 +66,16 @@ export default async function handler(req, res) {
       });
     }
 
-    // Build complete config with all required fields
+    // Build complete config with all required fields matching BrowserSerializedContinueConfig
     const config = {
+      // Required arrays
+      slashCommands: [],
+      contextProviders: [],
+      tools: [],
+      mcpServerStatuses: [],
+      rules: [],
+
+      // Models configuration
       models: models,
       selectedModelByRole: {
         chat: models[0] || null,
@@ -87,12 +95,39 @@ export default async function handler(req, res) {
         rerank: [],
         embed: [],
       },
-      slashCommands: [],
-      contextProviders: [],
-      tools: [],
-      mcpServerStatuses: [],
-      rules: [],
+
+      // Required boolean
       usePlatform: true,
+
+      // Optional but should be included
+      allowAnonymousTelemetry: false,
+      disableIndexing: false,
+      disableSessionTitles: false,
+
+      // Optional objects
+      ui: {
+        fontSize: 14,
+        showSessionTabs: true,
+        codeBlockToolbarPosition: "bottom",
+        codeWrap: false,
+        displayRawMarkdown: false,
+        showChatScrollbar: true,
+        continueAfterToolRejection: false,
+      },
+      experimental: {
+        enableExperimentalTools: false,
+        onlyUseSystemMessageTools: false,
+        codebaseToolCallingOnly: false,
+        enableStaticContextualization: false,
+        useChromiumForDocsCrawling: false,
+        readResponseTTS: false,
+        useCurrentFileAsContext: false,
+      },
+      tabAutocompleteOptions: {
+        useCache: true,
+        multilineCompletions: "auto",
+        disableInFiles: [],
+      },
     };
 
     const response = {
