@@ -44,6 +44,89 @@ jobs:
       - name: Compile Functions
         run: node compile-functions.js
 
+      - name: Copy Functions to dist
+        run: |
+          # Ensure functions are copied to dist (not ignored)
+          mkdir -p gui/dist/functions/api
+          # Functions should already be in gui/dist/functions/api/ from compile-functions.js
+          # But we also create individual handlers for better compatibility
+          if [ ! -f "gui/dist/functions/api/config.js" ]; then
+            echo "Creating config.js handler..."
+            cat > gui/dist/functions/api/config.js << 'EOF'
+          export const onRequestGet = async (context) => {
+            const { env } = context;
+            const corsHeaders = {
+              "Access-Control-Allow-Origin": "*",
+              "Access-Control-Allow-Methods": "GET, POST, OPTIONS, PUT, DELETE",
+              "Access-Control-Allow-Headers": "Content-Type, Authorization",
+            };
+            const models = [];
+            if (env.ANTHROPIC_API_KEY) {
+              models.push({title: "Claude 3.5 Sonnet", provider: "anthropic", model: "claude-3-5-sonnet-20241022", apiKey: env.ANTHROPIC_API_KEY});
+              models.push({title: "Claude 3 Opus", provider: "anthropic", model: "claude-3-opus-20240229", apiKey: env.ANTHROPIC_API_KEY});
+            }
+            const response = {
+              status: "success",
+              content: {
+                config: {models, selectedModelByRole: {chat: models[0] || null}},
+                profileId: "default",
+                organizations: [{id: "personal", name: "Personal", slug: "personal", iconUrl: null, selectedProfileId: "default", profiles: [{id: "default", title: "Default Profile", iconUrl: null, profileType: "local"}]}],
+                selectedOrgId: "personal"
+              }
+            };
+            return new Response(JSON.stringify(response), {headers: {...corsHeaders, "Content-Type": "application/json"}});
+          };
+          export const onRequestPost = async (context) => {
+            const { request } = context;
+            const corsHeaders = {
+              "Access-Control-Allow-Origin": "*",
+              "Access-Control-Allow-Methods": "GET, POST, OPTIONS, PUT, DELETE",
+              "Access-Control-Allow-Headers": "Content-Type, Authorization",
+            };
+            let body = {};
+            try { body = await request.json(); } catch {}
+            const { messageType } = body;
+            if (messageType === "history/list") {
+              return new Response(JSON.stringify({status: "success", content: []}), {headers: {...corsHeaders, "Content-Type": "application/json"}});
+            }
+            return new Response(JSON.stringify({status: "success", content: {}}), {headers: {...corsHeaders, "Content-Type": "application/json"}});
+          };
+          export const onRequestOptions = async () => {
+            return new Response(null, {headers: {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, OPTIONS, PUT, DELETE", "Access-Control-Allow-Headers": "Content-Type, Authorization"}});
+          };
+          EOF
+          fi
+          
+          if [ ! -f "gui/dist/functions/api/message.js" ]; then
+            echo "Creating message.js handler..."
+            cat > gui/dist/functions/api/message.js << 'EOF'
+          export const onRequestPost = async (context) => {
+            const { request } = context;
+            const corsHeaders = {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, OPTIONS, PUT, DELETE", "Access-Control-Allow-Headers": "Content-Type, Authorization"};
+            let body = {};
+            try { body = await request.json(); } catch {}
+            const { messageType } = body;
+            if (messageType === "llm/streamChat") {
+              const stream = new ReadableStream({
+                async start(controller) {
+                  const encoder = new TextEncoder();
+                  const response = {role: "assistant", content: "Backend API fonctionne mais nécessite une implémentation complète des appels LLM."};
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify(response)}\n\n`));
+                  controller.close();
+                }
+              });
+              return new Response(stream, {headers: {...corsHeaders, "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive"}});
+            }
+            return new Response(JSON.stringify({status: "success", content: {}}), {headers: {...corsHeaders, "Content-Type": "application/json"}});
+          };
+          export const onRequestOptions = async () => {
+            return new Response(null, {headers: {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, OPTIONS, PUT, DELETE", "Access-Control-Allow-Headers": "Content-Type, Authorization"}});
+          };
+          EOF
+          fi
+          
+          echo "✅ Functions handlers created"
+
       - name: Create _redirects file
         run: |
           mkdir -p gui/dist
