@@ -53,7 +53,18 @@ jobs:
         run: |
           echo "📋 Checking Functions..."
           ls -la gui/dist/functions/api/ || echo "⚠️  Functions directory not found"
-          test -f gui/dist/functions/api/\[...path\].js && echo "✅ Function file found" || echo "❌ Function file missing"
+          if [ -f "gui/dist/functions/api/[...path].js" ]; then
+            echo "✅ Function file found: [...path].js"
+            head -20 "gui/dist/functions/api/[...path].js"
+          else
+            echo "❌ Function file missing"
+            ls -la gui/dist/functions/api/ || echo "Directory listing failed"
+          fi
+
+      - name: List all files in dist/functions
+        run: |
+          echo "📋 Full Functions directory structure:"
+          find gui/dist/functions -type f -o -type d || ls -R gui/dist/functions || echo "Could not list functions"
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1
