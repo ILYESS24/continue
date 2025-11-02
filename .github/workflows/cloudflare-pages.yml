@@ -149,6 +149,14 @@ jobs:
           echo "📋 Full Functions directory structure:"
           find gui/dist/functions -type f -o -type d || ls -R gui/dist/functions || echo "Could not list functions"
 
+      - name: Prepare deployment directory
+        run: |
+          # Copy functions to dist/functions for deployment
+          mkdir -p gui/dist/functions/api
+          cp -r functions/api/* gui/dist/functions/api/ 2>/dev/null || cp gui/dist/functions/api/\[...path\].js gui/dist/functions/api/ 2>/dev/null || echo "Functions already in place"
+          echo "📋 Final functions structure:"
+          find gui/dist/functions -type f || ls -R gui/dist/functions || echo "Functions directory check"
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1
         with:
@@ -158,4 +166,5 @@ jobs:
           directory: gui/dist
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           wranglerVersion: '4'
+          compatibilityDate: '2024-01-01'
 
