@@ -425,7 +425,7 @@ function RulesSubSection() {
   };
 
   const sortedRules: RuleWithSource[] = useMemo(() => {
-    const rules = [...config.rules.map((rule) => ({ ...rule }))];
+    const rules = [...(config.rules || []).map((rule) => ({ ...rule }))];
 
     // Use profile rawYaml to infer slugs
     if (selectedProfile?.rawYaml) {

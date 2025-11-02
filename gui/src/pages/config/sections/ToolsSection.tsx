@@ -406,12 +406,14 @@ function MCPServerPreview({
 }
 
 export function ToolsSection() {
-  const availableTools = useAppSelector((state) => state.config.config.tools);
+  const availableTools = useAppSelector(
+    (state) => state.config.config.tools || [],
+  );
 
   const currentOrg = useAppSelector(selectCurrentOrg);
   const mode = useAppSelector((store) => store.session.mode);
   const servers = useAppSelector(
-    (store) => store.config.config.mcpServerStatuses,
+    (store) => store.config.config.mcpServerStatuses || [],
   );
   const { selectedProfile } = useAuth();
   const ideMessenger = useContext(IdeMessengerContext);
