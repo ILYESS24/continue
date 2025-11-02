@@ -25,7 +25,7 @@ import HeaderButtonWithToolTip from "../../../components/gui/HeaderButtonWithToo
 import Switch from "../../../components/gui/Switch";
 import { useEditBlock } from "../../../components/mainInput/Lump/useEditBlock";
 import { useMainEditor } from "../../../components/mainInput/TipTapEditor";
-import { Card, EmptyState, useFontSize } from "../../../components/ui";
+import { Card, EmptyState } from "../../../components/ui";
 import { useAuth } from "../../../context/Auth";
 import { IdeMessengerContext } from "../../../context/IdeMessenger";
 import { useBookmarkedSlashCommands } from "../../../hooks/useBookmarkedSlashCommands";
@@ -280,8 +280,9 @@ function PromptsSubSection() {
   };
 
   const sortedCommands = useMemo(() => {
-    const promptsWithSlug: PromptCommandWithSlug[] =
-      structuredClone(slashCommands);
+    const promptsWithSlug: PromptCommandWithSlug[] = structuredClone(
+      slashCommands || [],
+    );
     // get the slugs from rawYaml
     if (selectedProfile?.rawYaml) {
       const parsed = parseConfigYaml(selectedProfile.rawYaml);

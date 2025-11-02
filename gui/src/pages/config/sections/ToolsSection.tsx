@@ -70,6 +70,12 @@ function MCPServerPreview({
   }>({});
   const ideMessenger = useContext(IdeMessengerContext);
   const config = useAppSelector((store) => store.config.config);
+  // Ensure mcpServerStatuses and tools are arrays
+  const safeConfig = {
+    ...config,
+    mcpServerStatuses: config.mcpServerStatuses || [],
+    tools: config.tools || [],
+  };
   const editBlock = useEditBlock();
 
   const dispatch = useAppDispatch();
@@ -78,7 +84,7 @@ function MCPServerPreview({
     dispatch(
       updateConfig({
         ...config,
-        mcpServerStatuses: config.mcpServerStatuses.map((s) =>
+        mcpServerStatuses: safeConfig.mcpServerStatuses.map((s) =>
           s.id === server.id
             ? {
                 ...s,
@@ -129,7 +135,7 @@ function MCPServerPreview({
     dispatch(
       updateConfig({
         ...config,
-        tools: config.tools.filter((tool) => tool.group !== server.id),
+        tools: safeConfig.tools.filter((tool) => tool.group !== server.id),
       }),
     );
     await ideMessenger.request("mcp/setServerEnabled", {
