@@ -23,10 +23,12 @@ export default defineConfig({
       "node_modules",
     ],
     alias: {
-      // Ensure partial-json can be resolved from both GUI and core
+      // Ensure core dependencies can be resolved from GUI node_modules first
+      uuid: resolve(__dirname, "node_modules/uuid"),
+      zod: resolve(__dirname, "node_modules/zod"),
       "partial-json":
-        resolve(__dirname, "../core/node_modules/partial-json") ||
-        resolve(__dirname, "node_modules/partial-json"),
+        resolve(__dirname, "node_modules/partial-json") ||
+        resolve(__dirname, "../core/node_modules/partial-json"),
       // Resolve local packages - try dist first, then root
       "@continuedev/config-yaml": resolve(
         __dirname,
