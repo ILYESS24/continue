@@ -14,6 +14,14 @@ export default defineConfig({
       project: "continue",
     }),
   ],
+  resolve: {
+    alias: {
+      // Ensure partial-json can be resolved from both GUI and core
+      "partial-json":
+        resolve(__dirname, "../core/node_modules/partial-json") ||
+        resolve(__dirname, "node_modules/partial-json"),
+    },
+  },
   build: {
     sourcemap: true,
 
