@@ -130,10 +130,15 @@ export default async function handler(req, res) {
       },
     };
 
+    // Format response to match FromCoreProtocol["configUpdate"][0]
+    // Expected format: { result: ConfigResult, profileId, organizations, selectedOrgId }
     const response = {
       status: "success",
       content: {
-        config: config,
+        result: {
+          config: config,
+          errors: [], // No errors for now
+        },
         profileId: "default",
         organizations: [
           {
