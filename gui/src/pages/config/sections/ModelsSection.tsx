@@ -93,7 +93,7 @@ export function ModelsSection() {
               )
             </span>
           }
-          models={config.modelsByRole.chat}
+          models={config.modelsByRole?.chat || []}
           selectedModel={config.selectedModelByRole.chat ?? undefined}
           onSelect={(model) => handleRoleUpdate("chat", model)}
           onConfigure={handleConfigureModel}
@@ -119,7 +119,7 @@ export function ModelsSection() {
               )
             </span>
           }
-          models={config.modelsByRole.autocomplete}
+          models={config.modelsByRole?.autocomplete || []}
           selectedModel={config.selectedModelByRole.autocomplete ?? undefined}
           onSelect={(model) => handleRoleUpdate("autocomplete", model)}
           onConfigure={handleConfigureModel}
@@ -152,7 +152,7 @@ export function ModelsSection() {
                   )
                 </span>
               }
-              models={config.modelsByRole.edit}
+              models={config.modelsByRole?.edit || []}
               selectedModel={config.selectedModelByRole.edit ?? undefined}
               onSelect={(model) => handleRoleUpdate("edit", model)}
               onConfigure={handleConfigureModel}
@@ -174,7 +174,7 @@ export function ModelsSection() {
               role="apply"
               displayName="Apply"
               description="Used to apply generated codeblocks to files"
-              models={config.modelsByRole.apply}
+              models={config.modelsByRole?.apply || []}
               selectedModel={config.selectedModelByRole.apply ?? undefined}
               onSelect={(model) => handleRoleUpdate("apply", model)}
               onConfigure={handleConfigureModel}
@@ -187,7 +187,7 @@ export function ModelsSection() {
               role="embed"
               displayName="Embed"
               description="Used to generate and query embeddings for the @codebase and @docs context providers"
-              models={config.modelsByRole.embed}
+              models={config.modelsByRole?.embed || []}
               selectedModel={config.selectedModelByRole.embed ?? undefined}
               onSelect={(model) => handleRoleUpdate("embed", model)}
               onConfigure={handleConfigureModel}
@@ -200,7 +200,7 @@ export function ModelsSection() {
               role="rerank"
               displayName="Rerank"
               description="Used for reranking results from the @codebase and @docs context providers"
-              models={config.modelsByRole.rerank}
+              models={config.modelsByRole?.rerank || []}
               selectedModel={config.selectedModelByRole.rerank ?? undefined}
               onSelect={(model) => handleRoleUpdate("rerank", model)}
               onConfigure={handleConfigureModel}

@@ -39,12 +39,12 @@ const ModelRoleSelector = ({
 }: ModelRoleSelectorProps) => {
   const ideMessenger = useContext(IdeMessengerContext);
 
-  const noConfiguredModels = models.every(
+  const noConfiguredModels = (models || []).every(
     (model) => model.configurationStatus !== LLMConfigurationStatuses.VALID,
   );
 
   function handleSelect(title: string | null) {
-    onSelect(models.find((m) => m.title === title) ?? null);
+    onSelect((models || []).find((m) => m.title === title) ?? null);
   }
 
   function handleOptionClick(
@@ -68,7 +68,7 @@ const ModelRoleSelector = ({
 
       <Listbox value={selectedModel?.title ?? null} onChange={handleSelect}>
         <div className="relative">
-          {models.length === 0 ? (
+          {(models || []).length === 0 ? (
             <ListboxButton
               onClick={() => ideMessenger.post("openUrl", setupURL)}
               className="bg-input border-command-border hover:bg-list-active hover:text-list-active-foreground text-description w-full justify-between rounded border px-2 py-1.5 underline hover:underline"
@@ -80,12 +80,12 @@ const ModelRoleSelector = ({
           ) : (
             <>
               <ListboxButton
-                disabled={models.length === 0}
+                disabled={(models || []).length === 0}
                 className="bg-input border-command-border hover:bg-list-active hover:text-list-active-foreground w-full justify-between rounded border px-2 py-1.5"
               >
-                {models.length === 0 || noConfiguredModels ? (
+                {(models || []).length === 0 || noConfiguredModels ? (
                   <span className="text-lightgray line-clamp-1 italic">
-                    {`No ${models.length === 0 ? "" : "valid "}${displayName} models${
+                    {`No ${(models || []).length === 0 ? "" : "valid "}${displayName} models${
                       ["Chat", "Apply", "Edit"].includes(displayName)
                         ? ". Using Chat model"
                         : ""
@@ -100,7 +100,7 @@ const ModelRoleSelector = ({
                   </span>
                 )}
 
-                {models.length > 0 && (
+                {(models || []).length > 0 && (
                   <div className="pointer-events-none flex items-center">
                     <ChevronUpDownIcon className="h-3 w-3" aria-hidden="true" />
                   </div>
@@ -111,7 +111,7 @@ const ModelRoleSelector = ({
                   style={{ borderRadius: defaultBorderRadius }}
                   className="min-w-40"
                 >
-                  {[...models]
+                  {[...(models || [])]
                     .sort((a, b) => a.title.localeCompare(b.title))
                     .map((option, idx) => {
                       const isConfigInvalid =
