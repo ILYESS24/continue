@@ -15,6 +15,13 @@ export default defineConfig({
     }),
   ],
   resolve: {
+    // Look in both GUI and core node_modules
+    modules: [
+      resolve(__dirname, "node_modules"),
+      resolve(__dirname, "../core/node_modules"),
+      resolve(__dirname, "../node_modules"),
+      "node_modules",
+    ],
     alias: {
       // Ensure partial-json can be resolved from both GUI and core
       "partial-json":
