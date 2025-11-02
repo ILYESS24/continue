@@ -149,13 +149,101 @@ jobs:
           echo "📋 Full Functions directory structure:"
           find gui/dist/functions -type f -o -type d || ls -R gui/dist/functions || echo "Could not list functions"
 
-      - name: Prepare deployment directory
+      - name: Create Functions handlers in JavaScript
         run: |
-          # Copy functions to dist/functions for deployment
+          # Create functions directory structure in dist
           mkdir -p gui/dist/functions/api
-          cp -r functions/api/* gui/dist/functions/api/ 2>/dev/null || cp gui/dist/functions/api/\[...path\].js gui/dist/functions/api/ 2>/dev/null || echo "Functions already in place"
-          echo "📋 Final functions structure:"
-          find gui/dist/functions -type f || ls -R gui/dist/functions || echo "Functions directory check"
+          
+          # Create config.js handler
+          cat > gui/dist/functions/api/config.js << 'CONFIG_EOF'
+          export const onRequestGet = async (context) => {
+            const { env } = context;
+            const corsHeaders = {
+              "Access-Control-Allow-Origin": "*",
+              "Access-Control-Allow-Methods": "GET, POST, OPTIONS, PUT, DELETE",
+              "Access-Control-Allow-Headers": "Content-Type, Authorization",
+            };
+            const models = [];
+            if (env.ANTHROPIC_API_KEY) {
+              models.push({title: "Claude 3.5 Sonnet", provider: "anthropic", model: "claude-3-5-sonnet-20241022", apiKey: env.ANTHROPIC_API_KEY});
+              models.push({title: "Claude 3 Opus", provider: "anthropic", model: "claude-3-opus-20240229", apiKey: env.ANTHROPIC_API_KEY});
+            }
+            if (env.OPENAI_API_KEY) {
+              models.push({title: "GPT-4", provider: "openai", model: "gpt-4", apiKey: env.OPENAI_API_KEY});
+              models.push({title: "GPT-3.5 Turbo", provider: "openai", model: "gpt-3.5-turbo", apiKey: env.OPENAI_API_KEY});
+            }
+            if (env.GROQ_API_KEY) {
+              models.push({title: "Llama 3.1 70B", provider: "groq", model: "llama-3.1-70b-versatile", apiKey: env.GROQ_API_KEY});
+            }
+            if (env.MISTRAL_API_KEY) {
+              models.push({title: "Mistral Large", provider: "mistral", model: "mistral-large-latest", apiKey: env.MISTRAL_API_KEY});
+            }
+            const response = {
+              status: "success",
+              content: {
+                config: {models, selectedModelByRole: {chat: models[0] || null}},
+                profileId: "default",
+                organizations: [{id: "personal", name: "Personal", slug: "personal", iconUrl: null, selectedProfileId: "default", profiles: [{id: "default", title: "Default Profile", iconUrl: null, profileType: "local"}]}],
+                selectedOrgId: "personal"
+              }
+            };
+            return new Response(JSON.stringify(response), {headers: {...corsHeaders, "Content-Type": "application/json"}});
+          };
+          export const onRequestPost = async (context) => {
+            const { request } = context;
+            const corsHeaders = {
+              "Access-Control-Allow-Origin": "*",
+              "Access-Control-Allow-Methods": "GET, POST, OPTIONS, PUT, DELETE",
+              "Access-Control-Allow-Headers": "Content-Type, Authorization",
+            };
+            let body = {};
+            try { body = await request.json(); } catch {}
+            const { messageType } = body;
+            if (messageType === "history/list") {
+              return new Response(JSON.stringify({status: "success", content: []}), {headers: {...corsHeaders, "Content-Type": "application/json"}});
+            }
+            if (messageType === "config/addModel" || messageType === "config/deleteModel") {
+              return new Response(JSON.stringify({status: "success", content: {}}), {headers: {...corsHeaders, "Content-Type": "application/json"}});
+            }
+            if (messageType?.startsWith("config/") || messageType?.startsWith("context/") || messageType?.startsWith("docs/")) {
+              return new Response(JSON.stringify({status: "success", content: {}}), {headers: {...corsHeaders, "Content-Type": "application/json"}});
+            }
+            return new Response(JSON.stringify({status: "success", content: {}}), {headers: {...corsHeaders, "Content-Type": "application/json"}});
+          };
+          export const onRequestOptions = async () => {
+            return new Response(null, {headers: {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, OPTIONS, PUT, DELETE", "Access-Control-Allow-Headers": "Content-Type, Authorization"}});
+          };
+          CONFIG_EOF
+          
+          # Create message.js handler
+          cat > gui/dist/functions/api/message.js << 'MESSAGE_EOF'
+          export const onRequestPost = async (context) => {
+            const { request } = context;
+            const corsHeaders = {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, OPTIONS, PUT, DELETE", "Access-Control-Allow-Headers": "Content-Type, Authorization"};
+            let body = {};
+            try { body = await request.json(); } catch {}
+            const { messageType } = body;
+            if (messageType === "llm/streamChat") {
+              const stream = new ReadableStream({
+                async start(controller) {
+                  const encoder = new TextEncoder();
+                  const response = {role: "assistant", content: "Backend API fonctionne mais nécessite une implémentation complète des appels LLM."};
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify(response)}\n\n`));
+                  controller.close();
+                }
+              });
+              return new Response(stream, {headers: {...corsHeaders, "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive"}});
+            }
+            return new Response(JSON.stringify({status: "success", content: {}}), {headers: {...corsHeaders, "Content-Type": "application/json"}});
+          };
+          export const onRequestOptions = async () => {
+            return new Response(null, {headers: {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, OPTIONS, PUT, DELETE", "Access-Control-Allow-Headers": "Content-Type, Authorization"}});
+          };
+          MESSAGE_EOF
+          
+          echo "✅ Functions JavaScript handlers created"
+          echo "📋 Functions structure:"
+          ls -la gui/dist/functions/api/ || echo "Could not list"
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1
