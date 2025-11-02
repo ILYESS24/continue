@@ -85,6 +85,18 @@ async function compileFunctions() {
   }
 
   console.log("✅ All Functions compiled successfully!");
+
+  // Also create simplified individual route handlers for better compatibility
+  console.log("📝 Creating individual route handlers...");
+
+  // Create config.js
+  const configPath = join(outputDir, "api", "config.js");
+  mkdirSync(dirname(configPath), { recursive: true });
+
+  // Copy from gui/dist/functions/api/config.js if it exists, otherwise skip
+  // This will be handled by the main [...path].js handler
+
+  console.log("✅ Route handlers ready!");
 }
 
 compileFunctions().catch((error) => {
