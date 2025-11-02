@@ -26,7 +26,9 @@ import {
 } from "../..";
 import { resolveRelativePathInDir } from "../../util/ideUtils";
 import { getEnvPathFromUserShell } from "../../util/shellPath";
-import { getOauthToken } from "./MCPOauth";
+// Auth removed - MCPOauth stub
+const getOauthToken = async (_serverUrl: string): Promise<string | null> =>
+  null;
 
 const DEFAULT_MCP_TIMEOUT = 20_000; // 20 seconds
 

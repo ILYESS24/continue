@@ -41,6 +41,11 @@ export async function getRemoteSession(
   return result.content;
 }
 
+// Track if we're already loading to prevent concurrent calls
+let isLoadingMetadata = false;
+let lastMetadataResult: (BaseSessionMetadata | RemoteSessionMetadata)[] | null =
+  null;
+
 export const refreshSessionMetadata = createAsyncThunk<
   RemoteSessionMetadata[] | BaseSessionMetadata[],
   {
@@ -48,18 +53,70 @@ export const refreshSessionMetadata = createAsyncThunk<
     limit?: number;
   },
   ThunkApiType
->("session/refreshMetadata", async ({ offset, limit }, { dispatch, extra }) => {
-  const result = await extra.ideMessenger.request("history/list", {
-    limit,
-    offset,
-  });
-  if (result.status === "error") {
-    throw new Error(result.error);
-  }
-  dispatch(setIsSessionMetadataLoading(false));
-  dispatch(setAllSessionMetadata(result.content));
-  return result.content;
-});
+>(
+  "session/refreshMetadata",
+  async ({ offset, limit }, { dispatch, extra, getState }) => {
+    // Prevent concurrent calls
+    if (isLoadingMetadata) {
+      return lastMetadataResult || [];
+    }
+
+    try {
+      isLoadingMetadata = true;
+      const result = await extra.ideMessenger.request("history/list", {
+        limit,
+        offset,
+      });
+
+      if (result.status === "error") {
+        // Even on error, stop loading
+        isLoadingMetadata = false;
+        dispatch(setIsSessionMetadataLoading(false));
+        // Only update if current state is different
+        const currentState = getState().session.allSessionMetadata;
+        if (currentState.length > 0) {
+          dispatch(setAllSessionMetadata([]));
+        }
+        lastMetadataResult = [];
+        return [];
+      }
+
+      const newMetadata = result.content || [];
+      const currentState = getState().session.allSessionMetadata;
+
+      // Compare if data actually changed to prevent unnecessary re-renders
+      const hasChanged =
+        newMetadata.length !== currentState.length ||
+        newMetadata.some((item, index) => {
+          const currentItem = currentState[index];
+          return !currentItem || item.sessionId !== currentItem.sessionId;
+        });
+
+      isLoadingMetadata = false;
+      dispatch(setIsSessionMetadataLoading(false));
+
+      // Only update state if data actually changed
+      if (hasChanged) {
+        dispatch(setAllSessionMetadata(newMetadata));
+      }
+
+      lastMetadataResult = newMetadata;
+      return newMetadata;
+    } catch (error) {
+      // Always stop loading, even on error
+      isLoadingMetadata = false;
+      dispatch(setIsSessionMetadataLoading(false));
+
+      // Only update if current state is different
+      const currentState = getState().session.allSessionMetadata;
+      if (currentState.length > 0) {
+        dispatch(setAllSessionMetadata([]));
+      }
+      lastMetadataResult = [];
+      return [];
+    }
+  },
+);
 
 export const deleteSession = createAsyncThunk<void, string, ThunkApiType>(
   "session/delete",

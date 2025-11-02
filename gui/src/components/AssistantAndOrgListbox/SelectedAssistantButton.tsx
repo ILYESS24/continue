@@ -45,15 +45,17 @@ export function SelectedAssistantButton({
               />
               Loading
             </span>
-          ) : (
+          ) : selectedProfile ? (
             <>
               {selectedProfile.iconUrl && (
                 <AssistantIcon assistant={selectedProfile} size={iconSize} />
               )}
               <span className={`xs:line-clamp-1 hidden select-none text-xs`}>
-                {selectedProfile.title}
+                {selectedProfile.title || selectedProfile.id || "Profile"}
               </span>
             </>
+          ) : (
+            <span className="text-description">No profile selected</span>
           )}
         </div>
         <ChevronDownIcon

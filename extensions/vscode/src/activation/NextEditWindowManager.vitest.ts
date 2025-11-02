@@ -1,3 +1,4 @@
+/* eslint-disable import/order */
 import {
   afterEach,
   beforeEach,
@@ -7,8 +8,6 @@ import {
   MockedFunction,
   vi,
 } from "vitest";
-
-// Mock all modules FIRST with inline factories (no external references)
 vi.mock("vscode", () => ({
   commands: {
     executeCommand: vi.fn(),

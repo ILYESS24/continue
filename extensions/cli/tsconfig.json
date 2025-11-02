@@ -14,7 +14,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmitOnError": false,
-    "types": ["node", "vitest/globals"],
+    "types": ["node"],
     "outDir": "dist",
     "declaration": true,
     "sourceMap": true,
@@ -26,5 +26,13 @@
       "core": ["../../core/dist/index.js"]
     }
   },
-  "include": ["src/**/*", "vitest.setup.ts"]
+  "include": ["src/**/*"],
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/**/*.spec.ts",
+    "src/**/__tests__/**",
+    "src/**/__mocks__/**",
+    "vitest.setup.ts",
+    "vitest.*.ts"
+  ]
 }

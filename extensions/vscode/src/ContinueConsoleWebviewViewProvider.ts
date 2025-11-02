@@ -157,7 +157,7 @@ export class ContinueConsoleWebviewViewProvider
 
     const inDevelopmentMode =
       context?.extensionMode === vscode.ExtensionMode.Development;
-    if (!inDevelopmentMode) {
+    if (inDevelopmentMode === false) {
       scriptUri = panel.webview
         .asWebviewUri(
           vscode.Uri.joinPath(extensionUri, "gui/assets/indexConsole.js"),

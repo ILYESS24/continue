@@ -22,21 +22,19 @@ import {
 } from "core/util/sanitization";
 import * as vscode from "vscode";
 
+import { encodeFullSlug } from "../../../../packages/config-yaml/dist";
 import { ApplyManager } from "../apply";
 import { VerticalDiffManager } from "../diff/vertical/manager";
 import { addCurrentSelectionToEdit } from "../quickEdit/AddCurrentSelection";
 import EditDecorationManager from "../quickEdit/EditDecorationManager";
-import {
-  getControlPlaneSessionInfo,
-  WorkOsAuthProvider,
-} from "../stubs/WorkOsAuthProvider";
+// Auth removed - stubs imported below
+import { getControlPlaneSessionInfo } from "../stubs/WorkOsAuthProvider";
 import { handleLLMError } from "../util/errorHandling";
 import { showTutorial } from "../util/tutorial";
 import { getExtensionUri } from "../util/vscode";
 import { VsCodeIde } from "../VsCodeIde";
 import { VsCodeWebviewProtocol } from "../webviewProtocol";
 
-import { encodeFullSlug } from "../../../../packages/config-yaml/dist";
 import { VsCodeExtension } from "./VsCodeExtension";
 
 type ToIdeOrWebviewFromCoreProtocol = ToIdeFromCoreProtocol &
@@ -88,14 +86,14 @@ export class VsCodeMessenger {
     private readonly ide: VsCodeIde,
     private readonly verticalDiffManagerPromise: Promise<VerticalDiffManager>,
     private readonly configHandlerPromise: Promise<ConfigHandler>,
-    private readonly workOsAuthProvider: WorkOsAuthProvider,
+    // Auth removed - workOsAuthProvider no longer needed
     private readonly editDecorationManager: EditDecorationManager,
     private readonly context: vscode.ExtensionContext,
     private readonly vsCodeExtension: VsCodeExtension,
   ) {
     /** WEBVIEW ONLY LISTENERS **/
     this.onWebview("showFile", (msg) => {
-      this.ide.openFile(msg.data.filepath);
+      void this.ide.openFile(msg.data.filepath);
     });
 
     this.onWebview("vscode/openMoveRightMarkdown", (msg) => {
@@ -575,7 +573,9 @@ export class VsCodeMessenger {
             `Current branch: ${currentBranch}, Target branch: ${branch}`,
           );
 
-          if (currentBranch !== branch) {
+          if (currentBranch === branch) {
+            console.log("Already on target branch, skipping checkout");
+          } else {
             // Try to switch to the branch using VS Code Git API
             await vscode.window.withProgress(
               {
@@ -601,8 +601,6 @@ export class VsCodeMessenger {
             vscode.window.showInformationMessage(
               `Switched to branch ${branch}`,
             );
-          } else {
-            console.log("Already on target branch, skipping checkout");
           }
         } catch (e: any) {
           console.error("Failed to switch branch:", e);
@@ -754,17 +752,12 @@ export class VsCodeMessenger {
     this.onWebviewOrCore("showToast", (msg) => {
       this.ide.showToast(...msg.data);
     });
-    this.onWebviewOrCore("getControlPlaneSessionInfo", async (msg) => {
-      return getControlPlaneSessionInfo(
-        msg.data.silent,
-        msg.data.useOnboarding,
-      );
+    // Auth removed - getControlPlaneSessionInfo always returns null
+    this.onWebviewOrCore("getControlPlaneSessionInfo", async (_msg) => {
+      return null;
     });
-    this.onWebviewOrCore("logoutOfControlPlane", async (msg) => {
-      const sessions = await this.workOsAuthProvider.getSessions();
-      await Promise.all(
-        sessions.map((session) => workOsAuthProvider.removeSession(session.id)),
-      );
+    // Auth removed - logoutOfControlPlane is a no-op
+    this.onWebviewOrCore("logoutOfControlPlane", async (_msg) => {
       vscode.commands.executeCommand(
         "setContext",
         "continue.isSignedInToControlPlane",

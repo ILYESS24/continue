@@ -4,6 +4,7 @@ import { GetLspDefinitionsFunction } from "core/autocomplete/types";
 import { ConfigHandler } from "core/config/ConfigHandler";
 import { RecentlyEditedRange } from "core/nextEdit/types";
 import * as vscode from "vscode";
+
 import { ContinueCompletionProvider } from "../autocomplete/completionProvider";
 
 export const getBeforeCursorPos = (range: Range, activePos: Position) => {
@@ -42,12 +43,18 @@ export const handleTextDocumentChange = async (
   const { config } = await configHandler.loadConfig();
 
   // if (!config?.experimental?.logEditingData) return;
-  if (!editor) return;
-  if (event.contentChanges.length === 0) return;
+  if (!editor) {
+    return;
+  }
+  if (event.contentChanges.length === 0) {
+    return;
+  }
 
   // Ensure that logging will only happen in the open-source continue repo
   const workspaceDirUri = await getWorkspaceDirUri(event);
-  if (!workspaceDirUri) return;
+  if (!workspaceDirUri) {
+    return;
+  }
 
   const activeCursorPos = editor.selection.active;
   const editActions: RangeInFileWithNextEditInfo[] = changes.map((change) => ({

@@ -93,11 +93,33 @@ export class IdeMessenger implements IIdeMessenger {
         window.postIntellijMessage?.(messageType, data, messageId);
         return;
       } else {
-        console.log(
-          "Unable to send message: vscode is undefined",
-          messageType,
-          data,
-        );
+        // Mode standalone: utiliser REST API au lieu de vscode.postMessage
+        // Déterminer l'endpoint selon le type de message
+        let endpoint = "config";
+        if (
+          messageType === "llm/streamChat" ||
+          messageType.startsWith("llm/")
+        ) {
+          endpoint = "message";
+        } else if (
+          messageType.startsWith("history/") &&
+          messageType !== "history/list"
+        ) {
+          // Les history/save, history/delete ne retournent rien
+          endpoint = "config";
+        } else if (messageType.startsWith("docs/")) {
+          endpoint = "config";
+        }
+
+        // Pour les post (pas de réponse attendue), envoyer en arrière-plan
+        fetch(`/api/${endpoint}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: data, messageType }),
+        }).catch((error) => {
+          // Ignorer silencieusement les erreurs pour les post
+          console.debug("Post message sent:", messageType);
+        });
         return;
       }
     }
@@ -147,6 +169,11 @@ export class IdeMessenger implements IIdeMessenger {
     messageType: T,
     data: FromWebviewProtocol[T][0],
   ): Promise<WebviewSingleMessage<T>> {
+    // Si on est en mode standalone (pas de vscode), utiliser REST API
+    if (typeof vscode === "undefined" && !isJetBrains()) {
+      return this._requestViaREST<T>(messageType, data);
+    }
+
     const messageId = uuidv4();
 
     return new Promise((resolve) => {
@@ -160,6 +187,152 @@ export class IdeMessenger implements IIdeMessenger {
 
       this.post(messageType, data, messageId);
     });
+  }
+
+  private async _requestViaREST<T extends keyof FromWebviewProtocol>(
+    messageType: T,
+    data: FromWebviewProtocol[T][0],
+  ): Promise<WebviewSingleMessage<T>> {
+    try {
+      // Mapping des messages vers les endpoints
+      let endpoint = "state";
+      let method = "GET";
+
+      // Mapping des messages vers les endpoints API
+      if (
+        messageType === "getState" ||
+        messageType === "config/getSerializedProfileInfo"
+      ) {
+        endpoint = "config";
+        method = "GET";
+      } else if (messageType.startsWith("config/")) {
+        endpoint = "config";
+        method = "POST";
+      } else if (
+        messageType === "llm/streamChat" ||
+        messageType.startsWith("llm/")
+      ) {
+        endpoint = "message";
+        method = "POST";
+      } else if (
+        messageType.startsWith("history/") ||
+        messageType.startsWith("docs/") ||
+        messageType.startsWith("context/")
+      ) {
+        // Ces messages ne retournent généralement rien (post) ou des données simples
+        endpoint = "config";
+        method = "POST";
+      } else {
+        endpoint = "config";
+        method = "POST";
+      }
+
+      const response = await fetch(`/api/${endpoint}`, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body:
+          method === "POST"
+            ? JSON.stringify({ message: data, messageType })
+            : undefined,
+      });
+
+      if (!response.ok) {
+        return {
+          status: "error",
+          error: `HTTP ${response.status}: ${response.statusText}`,
+        } as WebviewSingleMessage<T>;
+      }
+
+      const result = await response.json();
+
+      // Adapter le format de réponse selon le type de message
+      if (endpoint === "config" || endpoint === "state") {
+        // Le backend retourne déjà le bon format avec { status, content }
+        if (result.status) {
+          return result as WebviewSingleMessage<T>;
+        }
+        // Si pas de status, envelopper
+        return {
+          status: "success",
+          content: result as any,
+        } as WebviewSingleMessage<T>;
+      }
+
+      return {
+        status: "success",
+        content: result as any,
+      } as WebviewSingleMessage<T>;
+    } catch (error) {
+      return {
+        status: "error",
+        error: error instanceof Error ? error.message : "Unknown error",
+      } as WebviewSingleMessage<T>;
+    }
+  }
+
+  private async *_streamRequestViaREST<T extends keyof FromWebviewProtocol>(
+    messageType: T,
+    data: FromWebviewProtocol[T][0],
+    cancelToken?: AbortSignal,
+  ): AsyncGenerator<
+    GeneratorYieldType<FromWebviewProtocol[T][1]>[],
+    GeneratorReturnType<FromWebviewProtocol[T][1]> | undefined
+  > {
+    try {
+      const response = await fetch("/api/message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: data, messageType }),
+        signal: cancelToken,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("No response body");
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                if (data.content) {
+                  yield [
+                    [{ role: "assistant" as const, content: data.content }],
+                  ] as GeneratorYieldType<FromWebviewProtocol[T][1]>[];
+                }
+              } catch (e) {
+                // Ignorer les erreurs de parsing
+              }
+            }
+          }
+        }
+      } finally {
+        reader.releaseLock();
+      }
+
+      return undefined;
+    } catch (error) {
+      if (cancelToken?.aborted) {
+        return undefined;
+      }
+      throw error;
+    }
   }
 
   /**
@@ -178,6 +351,11 @@ export class IdeMessenger implements IIdeMessenger {
     GeneratorYieldType<FromWebviewProtocol[T][1]>[],
     GeneratorReturnType<FromWebviewProtocol[T][1]> | undefined
   > {
+    // Si on est en mode standalone, utiliser REST API avec streaming
+    if (typeof vscode === "undefined" && !isJetBrains()) {
+      yield* this._streamRequestViaREST<T>(messageType, data, cancelToken);
+      return;
+    }
     const messageId = uuidv4();
 
     this.post(messageType, data, messageId);

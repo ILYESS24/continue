@@ -97,43 +97,82 @@ function ParallelListeners() {
 
   // Load config from the IDE
   useEffect(() => {
+    let hasLoadedOnce = false; // Prevent multiple simultaneous loads
+    let configLoadPromise: Promise<void> | null = null;
+
     async function initialLoadConfig() {
-      dispatch(setIsSessionMetadataLoading(true));
-      dispatch(setConfigLoading(true));
-      const result = await ideMessenger.request(
-        "config/getSerializedProfileInfo",
-        undefined,
-      );
-      if (result.status === "success") {
-        await handleConfigUpdate(true, result.content);
+      // Prevent multiple simultaneous calls
+      if (hasLoadedOnce && hasDoneInitialConfigLoad.current) {
+        return;
       }
-      dispatch(setConfigLoading(false));
-      if (initialSessionId) {
-        await dispatch(
-          loadSession({
-            sessionId: initialSessionId,
-            saveCurrentSession: false,
-          }),
+      if (configLoadPromise) {
+        return configLoadPromise;
+      }
+
+      hasLoadedOnce = true;
+      configLoadPromise = (async () => {
+        dispatch(setIsSessionMetadataLoading(true));
+        dispatch(setConfigLoading(true));
+        const result = await ideMessenger.request(
+          "config/getSerializedProfileInfo",
+          undefined,
         );
-      }
+        if (result.status === "success") {
+          await handleConfigUpdate(true, result.content);
+        }
+        dispatch(setConfigLoading(false));
+
+        // IMPORTANT: Always call refreshSessionMetadata to stop loading, even if config failed
+        // This ensures setIsSessionMetadataLoading(false) is called
+        // Only call once per config load to prevent re-renders
+        if (!hasDoneInitialConfigLoad.current || result.status === "success") {
+          void dispatch(refreshSessionMetadata({}));
+        }
+
+        if (initialSessionId) {
+          await dispatch(
+            loadSession({
+              sessionId: initialSessionId,
+              saveCurrentSession: false,
+            }),
+          );
+        }
+        configLoadPromise = null;
+      })();
+      return configLoadPromise;
     }
     void initialLoadConfig();
+    // Poll only once after 2 seconds if config hasn't loaded yet
+    // This prevents infinite polling if config load fails
+    let pollCount = 0;
+    const maxPolls = 5; // Max 5 polls (10 seconds total)
+    let hasCalledPostInit = false; // Track if post-init actions have been called
     const interval = setInterval(() => {
+      pollCount++;
       if (hasDoneInitialConfigLoad.current) {
-        // Init to run on initial config load
-        ideMessenger.post("docs/initStatuses", undefined);
-        void dispatch(updateFileSymbolsFromHistory());
-        void dispatch(refreshSessionMetadata({}));
-
+        // Only run post-init actions once
+        if (!hasCalledPostInit) {
+          hasCalledPostInit = true;
+          // Init to run on initial config load
+          ideMessenger.post("docs/initStatuses", undefined);
+          void dispatch(updateFileSymbolsFromHistory());
+          // refreshSessionMetadata already called in initialLoadConfig, don't call again
+        }
         // This triggers sending pending status to the GUI for relevant docs indexes
         clearInterval(interval);
+      } else if (pollCount >= maxPolls) {
+        // Stop polling after max attempts to prevent infinite loops
+        clearInterval(interval);
+        // Ensure loading state is cleared even if config load failed
+        dispatch(setIsSessionMetadataLoading(false));
       } else {
+        // Retry config load (but don't call refreshSessionMetadata again - it's already called in initialLoadConfig)
         void initialLoadConfig();
       }
     }, 2_000);
 
     return () => clearInterval(interval);
-  }, [hasDoneInitialConfigLoad, ideMessenger, initialSessionId]);
+  }, [hasDoneInitialConfigLoad, ideMessenger, initialSessionId, dispatch]);
 
   useWebviewListener(
     "configUpdate",

@@ -1,11 +1,6 @@
 import { type AssistantConfig } from "@continuedev/sdk";
 import chalk from "chalk";
 
-import {
-  isAuthenticated,
-  isAuthenticatedConfig,
-  loadAuthConfig,
-} from "./auth/workos.js";
 import { getAllSlashCommands } from "./commands/commands.js";
 import { handleInit } from "./commands/init.js";
 import { handleInfoSlashCommand } from "./infoScreen.js";
@@ -53,66 +48,13 @@ async function handleHelp(_args: string[], _assistant: AssistantConfig) {
   return { output: helpMessage };
 }
 
-async function handleLogin() {
-  try {
-    const newAuthState = await services.auth.login();
-    await reloadService(SERVICE_NAMES.AUTH);
-
-    const userInfo =
-      newAuthState.authConfig && isAuthenticatedConfig(newAuthState.authConfig)
-        ? newAuthState.authConfig.userEmail || newAuthState.authConfig.userId
-        : "user";
-
-    console.info(chalk.green(`\nLogged in as ${userInfo}`));
-
-    return {
-      exit: false,
-      output: "Login successful! All services updated automatically.",
-    };
-  } catch (error: any) {
-    console.error(chalk.red(`\nLogin failed: ${error.message}`));
-    return {
-      exit: false,
-      output: `Login failed: ${error.message}`,
-    };
-  }
-}
-
-async function handleLogout() {
-  try {
-    await services.auth.logout();
-    return {
-      exit: true,
-      output: "Logged out successfully",
-    };
-  } catch {
-    return {
-      exit: true,
-      output: "Logged out successfully",
-    };
-  }
-}
+// Login/logout removed - authentication no longer supported
 
 function handleWhoami() {
-  if (isAuthenticated()) {
-    const config = loadAuthConfig();
-    if (config && isAuthenticatedConfig(config)) {
-      return {
-        exit: false,
-        output: `Logged in as ${config.userEmail || config.userId}`,
-      };
-    } else {
-      return {
-        exit: false,
-        output: "Authenticated via environment variable",
-      };
-    }
-  } else {
-    return {
-      exit: false,
-      output: "Not logged in. Use /login to authenticate.",
-    };
-  }
+  return {
+    exit: false,
+    output: "Authentication is not supported in this version.",
+  };
 }
 
 async function handleFork() {
@@ -179,8 +121,7 @@ const commandHandlers: Record<string, CommandHandler> = {
   config: () => {
     return { openConfigSelector: true };
   },
-  login: handleLogin,
-  logout: handleLogout,
+  // login/logout removed - authentication no longer supported
   whoami: handleWhoami,
   info: handleInfoSlashCommand,
   model: () => ({ openModelSelector: true }),

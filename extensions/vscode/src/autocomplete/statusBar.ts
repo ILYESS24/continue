@@ -232,7 +232,9 @@ export function getNextEditMenuItems(
   currentStatus: StatusBarStatus | undefined,
   nextEditEnabled: boolean,
 ): vscode.QuickPickItem[] {
-  if (currentStatus !== StatusBarStatus.Enabled) return [];
+  if (currentStatus !== StatusBarStatus.Enabled) {
+    return [];
+  }
 
   return [
     {

@@ -1,0 +1,57 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy to Cloudflare Pages
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.19.0'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build packages
+        run: node ./scripts/build-packages.js
+
+      - name: Build core
+        run: |
+          cd core
+          npm ci
+          npm run build
+
+      - name: Build GUI
+        run: |
+          cd gui
+          npm ci
+          npm run build
+
+      - name: Create _redirects file
+        run: |
+          mkdir -p gui/dist
+          echo "/*    /index.html   200" > gui/dist/_redirects
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: continue
+          directory: gui/dist
+          # gitHubToken: ${{ secrets.GITHUB_TOKEN }}  # Optionnel pour les previews
+

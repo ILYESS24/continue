@@ -210,11 +210,19 @@ const getCommandsMap: (
     },
     "continue.acceptVerticalDiffBlock": (fileUri?: string, index?: number) => {
       captureCommandTelemetry("acceptVerticalDiffBlock");
-      verticalDiffManager.acceptRejectVerticalDiffBlock(true, fileUri, index);
+      void verticalDiffManager.acceptRejectVerticalDiffBlock(
+        true,
+        fileUri,
+        index,
+      );
     },
     "continue.rejectVerticalDiffBlock": (fileUri?: string, index?: number) => {
       captureCommandTelemetry("rejectVerticalDiffBlock");
-      verticalDiffManager.acceptRejectVerticalDiffBlock(false, fileUri, index);
+      void verticalDiffManager.acceptRejectVerticalDiffBlock(
+        false,
+        fileUri,
+        index,
+      );
     },
     "continue.quickFix": async (
       range: vscode.Range,
@@ -249,19 +257,19 @@ const getCommandsMap: (
     ) => {
       captureCommandTelemetry("customQuickActionStreamInlineEdit");
 
-      streamInlineEdit("docstring", prompt, range);
+      void streamInlineEdit("docstring", prompt, range);
     },
     "continue.codebaseForceReIndex": async () => {
-      core.invoke("index/forceReIndex", undefined);
+      void core.invoke("index/forceReIndex", undefined);
     },
     "continue.rebuildCodebaseIndex": async () => {
-      core.invoke("index/forceReIndex", { shouldClearIndexes: true });
+      void core.invoke("index/forceReIndex", { shouldClearIndexes: true });
     },
     "continue.docsIndex": async () => {
-      core.invoke("context/indexDocs", { reIndex: false });
+      void core.invoke("context/indexDocs", { reIndex: false });
     },
     "continue.docsReIndex": async () => {
-      core.invoke("context/indexDocs", { reIndex: true });
+      void core.invoke("context/indexDocs", { reIndex: true });
     },
     "continue.focusContinueInput": async () => {
       const isContinueInputFocused = await sidebar.webviewProtocol.request(
@@ -299,7 +307,7 @@ const getCommandsMap: (
         }
       } else {
         focusGUI();
-        sidebar.webviewProtocol?.request(
+        void sidebar.webviewProtocol?.request(
           "focusContinueInputWithNewSession",
           undefined,
           false,
@@ -330,7 +338,7 @@ const getCommandsMap: (
       } else {
         focusGUI();
 
-        sidebar.webviewProtocol?.request(
+        void sidebar.webviewProtocol?.request(
           "focusContinueInputWithoutClear",
           undefined,
         );
@@ -343,7 +351,7 @@ const getCommandsMap: (
     "continue.focusEdit": async (args?: QuickEditShowParams) => {
       captureCommandTelemetry("focusEdit");
       focusGUI();
-      sidebar.webviewProtocol?.request("focusEdit", undefined);
+      void sidebar.webviewProtocol?.request("focusEdit", undefined);
     },
     "continue.exitEditMode": async () => {
       captureCommandTelemetry("exitEditMode");
@@ -358,7 +366,7 @@ const getCommandsMap: (
     "continue.writeCommentsForCode": async () => {
       captureCommandTelemetry("writeCommentsForCode");
 
-      streamInlineEdit(
+      void streamInlineEdit(
         "comment",
         "Write comments for this code. Do not change anything about the code itself.",
       );
@@ -374,18 +382,18 @@ const getCommandsMap: (
     "continue.fixCode": async () => {
       captureCommandTelemetry("fixCode");
 
-      streamInlineEdit(
+      void streamInlineEdit(
         "fix",
         "Fix this code. If it is already 100% correct, simply rewrite the code.",
       );
     },
     "continue.optimizeCode": async () => {
       captureCommandTelemetry("optimizeCode");
-      streamInlineEdit("optimize", "Optimize this code");
+      void streamInlineEdit("optimize", "Optimize this code");
     },
     "continue.fixGrammar": async () => {
       captureCommandTelemetry("fixGrammar");
-      streamInlineEdit(
+      void streamInlineEdit(
         "fixGrammar",
         "If there are any grammar or spelling mistakes in this writing, fix them. Do not make other large changes to the writing.",
       );
@@ -404,7 +412,7 @@ const getCommandsMap: (
 
       vscode.commands.executeCommand("continue.continueGUIView.focus");
 
-      sidebar.webviewProtocol?.request("userInput", {
+      void sidebar.webviewProtocol?.request("userInput", {
         input: `I got the following error, can you please help explain how to fix it?\n\n${terminalContents.trim()}`,
       });
     },
@@ -419,10 +427,10 @@ const getCommandsMap: (
       captureCommandTelemetry("addModel");
 
       vscode.commands.executeCommand("continue.continueGUIView.focus");
-      sidebar.webviewProtocol?.request("addModel", undefined);
+      void sidebar.webviewProtocol?.request("addModel", undefined);
     },
     "continue.newSession": () => {
-      sidebar.webviewProtocol?.request("newSession", undefined);
+      void sidebar.webviewProtocol?.request("newSession", undefined);
     },
 
     "continue.shareSession": async (sessionId: string | undefined) => {
@@ -685,7 +693,7 @@ const getCommandsMap: (
       quickPick.show();
     },
     "continue.navigateTo": (path: string, toggle: boolean) => {
-      sidebar.webviewProtocol?.request("navigateTo", { path, toggle });
+      void sidebar.webviewProtocol?.request("navigateTo", { path, toggle });
       focusGUI();
     },
     "continue.startLocalOllama": () => {

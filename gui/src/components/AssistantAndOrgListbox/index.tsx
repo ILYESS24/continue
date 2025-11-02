@@ -1,10 +1,8 @@
 import {
   ArrowPathIcon,
-  ArrowRightStartOnRectangleIcon,
   Cog6ToothIcon,
   PlusIcon,
 } from "@heroicons/react/24/outline";
-import { isOnPremSession } from "core/control-plane/AuthTypes";
 import { useContext, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/Auth";
@@ -41,19 +39,12 @@ export function AssistantAndOrgListbox({
   const listboxRef = useRef<HTMLDivElement>(null);
   const currentOrg = useAppSelector(selectCurrentOrg);
   const ideMessenger = useContext(IdeMessengerContext);
-  const {
-    profiles,
-    selectedProfile,
-    session,
-    logout,
-    login,
-    organizations,
-    refreshProfiles,
-  } = useAuth();
+  const { profiles, selectedProfile, organizations, refreshProfiles } =
+    useAuth();
   const configLoading = useAppSelector((store) => store.config.loading);
   const tinyFont = useFontSize(-4);
-  const shouldRenderOrgInfo =
-    session && organizations.length > 1 && !isOnPremSession(session);
+  // Auth removed - always hide org info
+  const shouldRenderOrgInfo = false;
 
   function close() {
     // Close the listbox by clicking outside or programmatically
@@ -62,21 +53,14 @@ export function AssistantAndOrgListbox({
   }
 
   function onNewAssistant() {
-    if (session) {
-      void ideMessenger.request("controlPlane/openUrl", {
-        path: "/new",
-        orgSlug: currentOrg?.slug,
-      });
-    } else {
-      void ideMessenger.request("config/newAssistantFile", undefined);
-    }
+    // Auth removed - always use local assistant file
+    void ideMessenger.request("config/newAssistantFile", undefined);
     close();
   }
 
+  // Auth removed - organizations no longer available
   function onNewOrganization() {
-    void ideMessenger.request("controlPlane/openUrl", {
-      path: "/organizations/new",
-    });
+    // No-op - control plane URLs not available without auth
     close();
   }
 
@@ -115,16 +99,19 @@ export function AssistantAndOrgListbox({
         if (now - lastToggleTime >= DEBOUNCE_MS) {
           lastToggleTime = now;
 
-          const profileIds = profiles?.map((profile) => profile.id) ?? [];
+          const profileIds =
+            profiles?.map((profile) => profile?.id).filter(Boolean) ?? [];
           // In case of 1 or 0 profiles just does nothing
           if (profileIds.length < 2) {
             return;
           }
           let nextId = profileIds[0];
-          if (selectedProfile) {
+          if (selectedProfile?.id) {
             const curIndex = profileIds.indexOf(selectedProfile.id);
-            const nextIndex = (curIndex + 1) % profileIds.length;
-            nextId = profileIds[nextIndex];
+            if (curIndex >= 0) {
+              const nextIndex = (curIndex + 1) % profileIds.length;
+              nextId = profileIds[nextIndex];
+            }
           }
           // Optimistic update
           dispatch(setSelectedProfile(nextId));
@@ -184,7 +171,7 @@ export function AssistantAndOrgListbox({
             </div>
 
             <AssistantOptions
-              selectedProfileId={selectedProfile?.id}
+              selectedProfileId={selectedProfile?.id || null}
               onClose={close}
             />
 
@@ -249,39 +236,7 @@ export function AssistantAndOrgListbox({
                     <span className="text-2xs">Reload</span>
                   </div>
                 </Button>
-                {session ? (
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      logout();
-                      close();
-                    }}
-                    variant="ghost"
-                    size="sm"
-                    className="text-description hover:bg-input my-0 w-full justify-start py-1.5 pl-1 text-left"
-                  >
-                    <div className="flex w-full items-center">
-                      <ArrowRightStartOnRectangleIcon className="ml-1.5 mr-2 h-3.5 w-3.5 flex-shrink-0" />
-                      <span className="text-2xs">Log out</span>
-                    </div>
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      login(false);
-                      close();
-                    }}
-                    variant="ghost"
-                    size="sm"
-                    className="text-description hover:bg-input my-0 w-full justify-start py-1.5 pl-1 text-left"
-                  >
-                    <div className="flex w-full items-center">
-                      <ArrowRightStartOnRectangleIcon className="ml-1.5 mr-2 h-3.5 w-3.5 flex-shrink-0 rotate-180" />
-                      <span className="text-2xs">Log in</span>
-                    </div>
-                  </Button>
-                )}
+                {/* Auth removed - login/logout buttons no longer needed */}
 
                 <Divider className="!mt-0" />
               </div>
@@ -290,7 +245,7 @@ export function AssistantAndOrgListbox({
             {/* Bottom Actions */}
             <div>
               <div className="text-description flex items-center justify-start px-2 py-1">
-                <span className="block" style={{ fontSize: tinyFont }}>
+                <span className="block text-xs">
                   <code>{getMetaKeyLabel()} ⇧ '</code> to toggle config
                 </span>
               </div>

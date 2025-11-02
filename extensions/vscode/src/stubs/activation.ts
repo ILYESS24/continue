@@ -1,7 +1,8 @@
 import { EXTENSION_NAME } from "core/control-plane/env";
 import * as vscode from "vscode";
 
-import { getUserToken } from "./auth";
+// Auth removed - getUserToken stub
+const getUserToken = async () => null;
 import { RemoteConfigSync } from "./remoteConfig";
 
 export async function setupRemoteConfigSync(reloadConfig: () => void) {
@@ -17,13 +18,13 @@ export async function setupRemoteConfigSync(reloadConfig: () => void) {
   ) {
     return;
   }
-  getUserToken().then(async (token) => {
+  void getUserToken().then(async (token: string | null) => {
     await vscode.workspace
       .getConfiguration(EXTENSION_NAME)
       .update("userToken", token, vscode.ConfigurationTarget.Global);
     try {
       const configSync = new RemoteConfigSync(reloadConfig, token);
-      configSync.setup();
+      void configSync.setup();
     } catch (e) {
       console.warn(`Failed to sync remote config: ${e}`);
     }

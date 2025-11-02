@@ -6,8 +6,6 @@ import "./init.js";
 import { Command } from "commander";
 
 import { chat } from "./commands/chat.js";
-import { login } from "./commands/login.js";
-import { logout } from "./commands/logout.js";
 import { listSessionsCommand } from "./commands/ls.js";
 import { remoteTest } from "./commands/remote-test.js";
 import { remote } from "./commands/remote.js";
@@ -237,25 +235,7 @@ addCommonOptions(program)
     await chat(prompt, options);
   });
 
-// Login subcommand
-program
-  .command("login")
-  .description("Authenticate with Continue")
-  .action(async () => {
-    // Telemetry: record command invocation
-    await posthogService.capture("cliCommand", { command: "login" });
-    await login();
-  });
-
-// Logout subcommand
-program
-  .command("logout")
-  .description("Log out from Continue")
-  .action(async () => {
-    // Telemetry: record command invocation
-    await posthogService.capture("cliCommand", { command: "logout" });
-    await logout();
-  });
+// Login/logout removed - authentication no longer supported
 
 // List sessions subcommand
 program

@@ -96,7 +96,7 @@ export async function addHighlightedCodeToContext(
 ) {
   const rangeInFileWithContents = getRangeInFileWithContents(true);
   if (rangeInFileWithContents) {
-    webviewProtocol?.request("highlightedCode", {
+    void webviewProtocol?.request("highlightedCode", {
       rangeInFileWithContents,
     });
   }
@@ -113,7 +113,7 @@ export async function addEntireFileToContext(
     const files = (await ideUtils.readDirectory(uri))!; //files can't be null if we reached this point
     for (const [filename, type] of files) {
       if (type === vscode.FileType.File) {
-        addEntireFileToContext(
+        void addEntireFileToContext(
           vscode.Uri.joinPath(uri, filename),
           webviewProtocol,
           ideUtils,
@@ -140,7 +140,7 @@ export async function addEntireFileToContext(
     },
   };
 
-  webviewProtocol?.request("highlightedCode", {
+  void webviewProtocol?.request("highlightedCode", {
     rangeInFileWithContents,
   });
 }
@@ -175,7 +175,7 @@ export function addCodeToContextFromRange(
     },
   };
 
-  webviewProtocol?.request("highlightedCode", {
+  void webviewProtocol?.request("highlightedCode", {
     rangeInFileWithContents,
     prompt,
     // Assume `true` since range selection is currently only used for quick actions/fixes

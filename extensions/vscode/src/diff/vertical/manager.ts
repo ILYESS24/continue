@@ -1,21 +1,21 @@
 import { ChatMessage, DiffLine, IDE, ILLM, RuleWithSource } from "core";
+import { myersDiff } from "core/diff/myers";
+import { ApplyAbortManager } from "core/edit/applyAbortManager";
+import { EDIT_MODE_STREAM_ID } from "core/edit/constants";
 import { streamDiffLines } from "core/edit/streamDiffLines";
 import { pruneLinesFromBottom, pruneLinesFromTop } from "core/llm/countTokens";
 import { getMarkdownLanguageTagForFile } from "core/util";
+import { stripImages } from "core/util/messageContent";
+import { getLastNPathParts } from "core/util/uri";
 import * as URI from "uri-js";
 import * as vscode from "vscode";
 
 import { isFastApplyModel } from "../../apply/utils";
+import { editOutcomeTracker } from "../../extension/EditOutcomeTracker";
 import EditDecorationManager from "../../quickEdit/EditDecorationManager";
 import { handleLLMError } from "../../util/errorHandling";
 import { VsCodeWebviewProtocol } from "../../webviewProtocol";
 
-import { myersDiff } from "core/diff/myers";
-import { ApplyAbortManager } from "core/edit/applyAbortManager";
-import { EDIT_MODE_STREAM_ID } from "core/edit/constants";
-import { stripImages } from "core/util/messageContent";
-import { getLastNPathParts } from "core/util/uri";
-import { editOutcomeTracker } from "../../extension/EditOutcomeTracker";
 import { VerticalDiffHandler, VerticalDiffHandlerOptions } from "./handler";
 import { getFirstChangedLine } from "./util";
 
@@ -50,7 +50,7 @@ export class VerticalDiffManager {
     options: VerticalDiffHandlerOptions,
   ): VerticalDiffHandler | undefined {
     if (this.fileUriToHandler.has(fileUri)) {
-      this.fileUriToHandler.get(fileUri)?.clear(false);
+      void this.fileUriToHandler.get(fileUri)?.clear(false);
       this.fileUriToHandler.delete(fileUri);
     }
     const editor = vscode.window.activeTextEditor;
@@ -138,7 +138,7 @@ export class VerticalDiffManager {
 
     const handler = this.fileUriToHandler.get(fileUri);
     if (handler) {
-      handler.clear(accept);
+      void handler.clear(accept);
       this.fileUriToHandler.delete(fileUri);
     }
 
@@ -225,7 +225,7 @@ export class VerticalDiffManager {
     // Check for existing handlers in the same file the new one will be created in
     const existingHandler = this.getHandlerForFile(fileUri);
     if (existingHandler) {
-      existingHandler.clear(false);
+      void existingHandler.clear(false);
     }
 
     await new Promise((resolve) => {

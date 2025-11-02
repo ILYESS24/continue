@@ -5,6 +5,10 @@ import { IContextProvider } from "core";
 import { ConfigHandler } from "core/config/ConfigHandler";
 import { EXTENSION_NAME, getControlPlaneEnv } from "core/control-plane/env";
 import { Core } from "core/core";
+import { modelSupportsNextEdit } from "core/llm/autodetect";
+import { NEXT_EDIT_MODELS } from "core/llm/constants";
+import { NextEditProvider } from "core/nextEdit/NextEditProvider";
+import { isNextEditTest } from "core/nextEdit/utils";
 import { FromCoreProtocol, ToCoreProtocol } from "core/protocol";
 import { InProcessMessenger } from "core/protocol/messenger";
 import {
@@ -16,7 +20,17 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import * as vscode from "vscode";
 
+import { JumpManager } from "../activation/JumpManager";
+import setupNextEditWindowManager, {
+  NextEditWindowManager,
+} from "../activation/NextEditWindowManager";
+import {
+  HandlerPriority,
+  SelectionChangeManager,
+} from "../activation/SelectionChangeManager";
 import { ContinueCompletionProvider } from "../autocomplete/completionProvider";
+import { GhostTextAcceptanceTracker } from "../autocomplete/GhostTextAcceptanceTracker";
+import { getDefinitionsFromLsp } from "../autocomplete/lsp";
 import {
   monitorBatteryChanges,
   setupStatusBar,
@@ -32,11 +46,13 @@ import EditDecorationManager from "../quickEdit/EditDecorationManager";
 import { QuickEdit } from "../quickEdit/QuickEditQuickPick";
 import { setupRemoteConfigSync } from "../stubs/activation";
 import { UriEventHandler } from "../stubs/uriHandler";
+// Auth removed - WorkOsAuthProvider stub imported below
 import {
   getControlPlaneSessionInfo,
   WorkOsAuthProvider,
 } from "../stubs/WorkOsAuthProvider";
 import { Battery } from "../util/battery";
+import { handleTextDocumentChange } from "../util/editLoggingUtils";
 import { FileSearch } from "../util/FileSearch";
 import { VsCodeIdeUtils } from "../util/ideUtils";
 import { VsCodeIde } from "../VsCodeIde";
@@ -44,21 +60,6 @@ import { VsCodeIde } from "../VsCodeIde";
 import { ConfigYamlDocumentLinkProvider } from "./ConfigYamlDocumentLinkProvider";
 import { VsCodeMessenger } from "./VsCodeMessenger";
 
-import { modelSupportsNextEdit } from "core/llm/autodetect";
-import { NEXT_EDIT_MODELS } from "core/llm/constants";
-import { NextEditProvider } from "core/nextEdit/NextEditProvider";
-import { isNextEditTest } from "core/nextEdit/utils";
-import { JumpManager } from "../activation/JumpManager";
-import setupNextEditWindowManager, {
-  NextEditWindowManager,
-} from "../activation/NextEditWindowManager";
-import {
-  HandlerPriority,
-  SelectionChangeManager,
-} from "../activation/SelectionChangeManager";
-import { GhostTextAcceptanceTracker } from "../autocomplete/GhostTextAcceptanceTracker";
-import { getDefinitionsFromLsp } from "../autocomplete/lsp";
-import { handleTextDocumentChange } from "../util/editLoggingUtils";
 import type { VsCodeWebviewProtocol } from "../webviewProtocol";
 
 export class VsCodeExtension {
@@ -76,7 +77,7 @@ export class VsCodeExtension {
   webviewProtocolPromise: Promise<VsCodeWebviewProtocol>;
   private core: Core;
   private battery: Battery;
-  private workOsAuthProvider: WorkOsAuthProvider;
+  // Auth removed - workOsAuthProvider no longer needed
   private fileSearch: FileSearch;
   private uriHandler = new UriEventHandler();
   private completionProvider: ContinueCompletionProvider;
@@ -172,11 +173,7 @@ export class VsCodeExtension {
   }
 
   constructor(context: vscode.ExtensionContext) {
-    // Register auth provider
-    this.workOsAuthProvider = new WorkOsAuthProvider(context, this.uriHandler);
-
-    void this.workOsAuthProvider.refreshSessions();
-    context.subscriptions.push(this.workOsAuthProvider);
+    // Auth removed - no longer registering auth provider
 
     this.editDecorationManager = new EditDecorationManager(context);
 
@@ -281,7 +278,7 @@ export class VsCodeExtension {
       this.ide,
       verticalDiffManagerPromise,
       configHandlerPromise,
-      this.workOsAuthProvider,
+      null as any, // Auth removed - workOsAuthProvider no longer needed
       this.editDecorationManager,
       context,
       this,
@@ -489,7 +486,9 @@ export class VsCodeExtension {
         getDefinitionsFromLsp,
       );
 
-      if (editInfo) this.core.invoke("files/smallEdit", editInfo);
+      if (editInfo) {
+        this.core.invoke("files/smallEdit", editInfo);
+      }
     });
 
     vscode.workspace.onDidSaveTextDocument(async (event) => {
@@ -553,7 +552,8 @@ export class VsCodeExtension {
           true,
         );
 
-        const sessionInfo = await getControlPlaneSessionInfo(true, false);
+        // Auth removed - sessionInfo always null
+        const sessionInfo = null;
         void this.core.invoke("didChangeControlPlaneSessionInfo", {
           sessionInfo,
         });

@@ -1,34 +1,19 @@
-import {
-  ProfileDescription,
-  SerializedOrgWithProfiles,
-} from "core/config/ProfileLifecycleManager";
-import { ControlPlaneSessionInfo } from "core/control-plane/AuthTypes";
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-import { useWebviewListener } from "../hooks/useWebviewListener";
+import { createContext, useContext } from "react";
 import { useAppDispatch, useAppSelector } from "../redux/hooks";
-import { setConfigLoading } from "../redux/slices/configSlice";
 import {
-  selectCurrentOrg,
-  selectSelectedProfile,
   setOrganizations,
   setSelectedOrgId,
 } from "../redux/slices/profilesSlice";
-import { IdeMessengerContext } from "./IdeMessenger";
 
+// Auth removed - simplified context with defaults
 interface AuthContextType {
-  session: ControlPlaneSessionInfo | undefined;
+  profiles: any[];
+  selectedProfile: any | null; // Changed to object for compatibility
+  session: null;
   logout: () => void;
-  login: (useOnboarding: boolean) => Promise<boolean>;
-  selectedProfile: ProfileDescription | null;
-  profiles: ProfileDescription[] | null;
-  refreshProfiles: (reason?: string) => Promise<void>;
-  organizations: SerializedOrgWithProfiles[];
+  login: (_useOnboarding?: boolean) => Promise<boolean>;
+  organizations: any[];
+  refreshProfiles: (_reason?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,98 +22,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const dispatch = useAppDispatch();
-  const ideMessenger = useContext(IdeMessengerContext);
-  // Session
-  const [session, setSession] = useState<ControlPlaneSessionInfo | undefined>(
-    undefined,
+  const orgs = useAppSelector((store) => store.profiles.organizations);
+  const selectedProfile = useAppSelector(
+    (store) => store.profiles.selectedProfile,
   );
 
-  // Orgs
-  const orgs = useAppSelector((store) => store.profiles.organizations);
-
-  // Profiles
-  const currentOrg = useAppSelector(selectCurrentOrg);
-  const selectedProfile = useAppSelector(selectSelectedProfile);
-
-  const login: AuthContextType["login"] = async (useOnboarding: boolean) => {
-    try {
-      const result = await ideMessenger.request("getControlPlaneSessionInfo", {
-        silent: false,
-        useOnboarding,
-      });
-
-      if (result.status === "error") {
-        console.error("Login failed:", result.error);
-        return false;
-      }
-
-      const session = result.content;
-      setSession(session);
-
-      return true;
-    } catch (error: any) {
-      console.error("Login request failed:", error);
-      // Let the error propagate so the caller can handle it
-      throw error;
-    }
+  const login = async (_useOnboarding: boolean = false) => {
+    // Auth removed - always return false
+    return false;
   };
 
   const logout = () => {
-    ideMessenger.post("logoutOfControlPlane", undefined);
+    // Auth removed - just clear organizations except personal
     dispatch(setOrganizations(orgs.filter((org) => org.id === "personal")));
     dispatch(setSelectedOrgId("personal"));
-    setSession(undefined);
   };
 
-  useEffect(() => {
-    async function init() {
-      const result = await ideMessenger.request("getControlPlaneSessionInfo", {
-        silent: true,
-        useOnboarding: false,
-      });
-      if (result.status === "success") {
-        setSession(result.content);
-      }
-    }
-    void init();
-  }, []);
+  const refreshProfiles = async (_reason?: string) => {
+    // Auth removed - no-op
+  };
 
-  useWebviewListener(
-    "sessionUpdate",
-    async (data) => {
-      setSession(data.sessionInfo);
-    },
-    [],
-  );
+  // Ensure profiles is always an array and filter out undefined/null
+  const allProfiles = orgs
+    .flatMap((org) => org?.profiles || [])
+    .filter((p) => p != null);
 
-  const refreshProfiles = useCallback(
-    async (reason?: string) => {
-      try {
-        dispatch(setConfigLoading(true));
-        await ideMessenger.request("config/refreshProfiles", {
-          reason,
-        });
-        ideMessenger.post("showToast", ["info", "Config refreshed"]);
-      } catch (e) {
-        console.error("Failed to refresh profiles", e);
-        ideMessenger.post("showToast", ["error", "Failed to refresh config"]);
-      } finally {
-        dispatch(setConfigLoading(false));
-      }
-    },
-    [ideMessenger],
-  );
+  // Ensure selectedProfile is found or default to first profile
+  // Return the full profile object for compatibility with components
+  const actualSelectedProfile =
+    allProfiles.find((p) => p?.id === selectedProfile) ||
+    allProfiles[0] ||
+    null;
 
   return (
     <AuthContext.Provider
       value={{
-        session,
+        profiles: allProfiles,
+        selectedProfile: actualSelectedProfile, // Return full object, not just ID
+        session: null,
         logout,
         login,
-        selectedProfile,
-        profiles: currentOrg?.profiles ?? [],
+        organizations: orgs.filter((org) => org != null),
         refreshProfiles,
-        organizations: orgs,
       }}
     >
       {children}
@@ -136,10 +71,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 };
 
-export const useAuth = (): AuthContextType => {
+export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    // Return defaults if context is missing
+    return {
+      profiles: [],
+      selectedProfile: null, // Can be null or ProfileDescription object
+      session: null,
+      logout: () => {},
+      login: async () => false,
+      organizations: [],
+      refreshProfiles: async () => {},
+    };
   }
   return context;
-};
+}

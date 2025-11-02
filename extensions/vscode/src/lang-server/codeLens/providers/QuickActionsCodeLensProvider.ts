@@ -136,7 +136,7 @@ export class QuickActionsCodeLensProvider implements vscode.CodeLensProvider {
     const symbols = await this.getTopLevelAndChildrenSymbols(document.uri);
 
     return symbols.flatMap(({ range }) => {
-      const commands: vscode.Command[] = !!this.customQuickActionsConfigs
+      const commands: vscode.Command[] = this.customQuickActionsConfigs
         ? this.getCustomCommands(range, this.customQuickActionsConfigs)
         : this.getDefaultCommand(range);
 

@@ -2,8 +2,6 @@ import { type AssistantConfig } from "@continuedev/sdk";
 
 // Export command functions
 export { chat } from "./chat.js";
-export { login } from "./login.js";
-export { logout } from "./logout.js";
 export { listSessionsCommand } from "./ls.js";
 export { remote } from "./remote.js";
 export { serve } from "./serve.js";
@@ -30,16 +28,7 @@ export const SYSTEM_SLASH_COMMANDS: SystemCommand[] = [
     description: "Clear the chat history",
     category: "system",
   },
-  {
-    name: "login",
-    description: "Authenticate with your account",
-    category: "system",
-  },
-  {
-    name: "logout",
-    description: "Sign out of your current session",
-    category: "system",
-  },
+  // Login/logout commands removed - authentication no longer supported
   {
     name: "update",
     description: "Update the Continue CLI",

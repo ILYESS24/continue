@@ -24,8 +24,8 @@ import {
   ToolCallDelta,
   ToolCallState,
 } from "core";
-import { mergeReasoningDetails } from "core/llm/openaiTypeConverters";
 import type { RemoteSessionMetadata } from "core/control-plane/client";
+import { mergeReasoningDetails } from "core/llm/openaiTypeConverters";
 import { NEW_SESSION_TITLE } from "core/util/constants";
 import {
   renderChatMessage,
@@ -714,7 +714,16 @@ export const sessionSlice = createSlice({
         payload,
       }: PayloadAction<(BaseSessionMetadata | RemoteSessionMetadata)[]>,
     ) => {
-      state.allSessionMetadata = payload;
+      // Only update if data actually changed to prevent unnecessary re-renders
+      if (
+        state.allSessionMetadata.length !== payload.length ||
+        state.allSessionMetadata.some((item, index) => {
+          const newItem = payload[index];
+          return !newItem || item.sessionId !== newItem.sessionId;
+        })
+      ) {
+        state.allSessionMetadata = payload;
+      }
     },
     //////////////////////////////////////////////////////////////////////////////////
     // These are for optimistic session metadata updates, especially for History page

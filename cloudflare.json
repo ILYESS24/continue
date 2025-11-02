@@ -1,0 +1,11 @@
+{
+  "buildCommand": "bash cloudflare-build.sh",
+  "outputDirectory": "gui/dist",
+  "rootDirectory": ".",
+  "nodeVersion": "20.19.0",
+  "builds": {
+    "env": {
+      "NODE_VERSION": "20.19.0"
+    }
+  }
+}

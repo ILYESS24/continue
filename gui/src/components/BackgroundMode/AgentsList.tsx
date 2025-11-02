@@ -1,6 +1,6 @@
 import { ArrowPathIcon, PlayIcon } from "@heroicons/react/24/outline";
-import { useContext, useEffect, useState } from "react";
 import { normalizeRepoUrl } from "core/util/repoUrl";
+import { useContext, useEffect, useState } from "react";
 import { useAuth } from "../../context/Auth";
 import { IdeMessengerContext } from "../../context/IdeMessenger";
 import { useAppSelector } from "../../redux/hooks";
@@ -78,6 +78,7 @@ export function AgentsList({ isCreatingAgent = false }: AgentsListProps) {
       if (!session) {
         setAgents([]);
         setTotalCount(0);
+        setError(null);
         return;
       }
 
@@ -115,9 +116,16 @@ export function AgentsList({ isCreatingAgent = false }: AgentsListProps) {
 
     void fetchAgents();
 
-    // Poll for updates every 10 seconds
+    // Only poll if session exists - stop polling when session is null
+    if (!session) {
+      return;
+    }
+
+    // Poll for updates every 10 seconds, but only if session exists
     const interval = setInterval(() => {
-      void fetchAgents();
+      if (session) {
+        void fetchAgents();
+      }
     }, 10000);
 
     return () => clearInterval(interval);
