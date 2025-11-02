@@ -35,7 +35,10 @@ export default defineConfig({
   },
   build: {
     sourcemap: true,
-
+    // Optimize dependencies to include core dependencies
+    commonjsOptions: {
+      include: [/core/, /node_modules/],
+    },
     // Change the output .js filename to not include a hash
     rollupOptions: {
       input: {
@@ -47,7 +50,19 @@ export default defineConfig({
         chunkFileNames: `assets/[name].js`,
         assetFileNames: `assets/[name].[ext]`,
       },
+      // Don't externalize core dependencies - bundle them
+      external: [],
     },
+  },
+  optimizeDeps: {
+    include: [
+      "core",
+      "zod",
+      "partial-json",
+      "@continuedev/config-yaml",
+      "@continuedev/terminal-security",
+    ],
+    force: true,
   },
   server: {
     cors: {
