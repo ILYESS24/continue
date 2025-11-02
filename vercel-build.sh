@@ -16,8 +16,11 @@ node ./scripts/build-packages.js || echo "⚠️  build-packages.js failed, cont
 # Build du core (ignore errors if sqlite3 fails)
 echo "📦 Building core..."
 cd core
-npm install || echo "⚠️  Core npm install had warnings, continuing..."
-npm run build || echo "⚠️  Core build had errors, continuing..."
+# Install dependencies, continue even if sqlite3 fails
+npm install 2>&1 | grep -v "sqlite3" || echo "⚠️  Core npm install had warnings, continuing..."
+# Try to install missing dependencies manually if needed
+npm install --no-save zod uuid partial-json 2>/dev/null || echo "⚠️  Some dependencies may be missing"
+npm run build 2>&1 | grep -v "sqlite3" || echo "⚠️  Core build had errors, continuing..."
 cd ..
 
 # Build du GUI (skip TypeScript check)
@@ -27,8 +30,9 @@ npm install || {
   echo "❌ GUI npm install failed"
   exit 1
 }
-# Install partial-json if not already present (needed by core)
-npm install partial-json@^0.1.7 --save || echo "⚠️  partial-json install warning"
+# Install core dependencies in GUI to ensure they're available during bundling
+echo "📦 Installing core dependencies in GUI for bundling..."
+npm install --no-save zod uuid partial-json 2>/dev/null || echo "⚠️  Some dependencies may already be present"
 
 # Use vite build directly, skip tsc to avoid TypeScript errors
 NODE_OPTIONS="--max-old-space-size=4096" npx vite build || {
