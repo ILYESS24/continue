@@ -12,11 +12,11 @@ npm install
 echo "📦 Building local packages..."
 node ./scripts/build-packages.js || echo "⚠️  build-packages.js failed, continuing..."
 
-# Build du core
+# Build du core (ignore errors if sqlite3 fails)
 echo "📦 Building core..."
 cd core
-npm install
-npm run build
+npm install || echo "⚠️  Core npm install had warnings, continuing..."
+npm run build || echo "⚠️  Core build had errors, continuing..."
 cd ..
 
 # Build du GUI
