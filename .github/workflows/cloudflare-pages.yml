@@ -41,10 +41,19 @@ jobs:
           npm ci
           npm run build
 
+      - name: Compile Functions
+        run: node compile-functions.js
+
       - name: Create _redirects file
         run: |
           mkdir -p gui/dist
           echo "/*    /index.html   200" > gui/dist/_redirects
+
+      - name: Verify Functions exist
+        run: |
+          echo "📋 Checking Functions..."
+          ls -la gui/dist/functions/api/ || echo "⚠️  Functions directory not found"
+          test -f gui/dist/functions/api/\[...path\].js && echo "✅ Function file found" || echo "❌ Function file missing"
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1
@@ -53,5 +62,6 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: continue
           directory: gui/dist
-          # gitHubToken: ${{ secrets.GITHUB_TOKEN }}  # Optionnel pour les previews
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          wranglerVersion: '4'
 
