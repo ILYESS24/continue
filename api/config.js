@@ -66,15 +66,39 @@ export default async function handler(req, res) {
       });
     }
 
+    // Build complete config with all required fields
+    const config = {
+      models: models,
+      selectedModelByRole: {
+        chat: models[0] || null,
+        apply: models[0] || null,
+        edit: models[0] || null,
+        summarize: models[0] || null,
+        autocomplete: null,
+        rerank: null,
+        embed: null,
+      },
+      modelsByRole: {
+        chat: models,
+        apply: models,
+        edit: models,
+        summarize: models,
+        autocomplete: [],
+        rerank: [],
+        embed: [],
+      },
+      slashCommands: [],
+      contextProviders: [],
+      tools: [],
+      mcpServerStatuses: [],
+      rules: [],
+      usePlatform: true,
+    };
+
     const response = {
       status: "success",
       content: {
-        config: {
-          models: models,
-          selectedModelByRole: {
-            chat: models[0] || null,
-          },
-        },
+        config: config,
         profileId: "default",
         organizations: [
           {
@@ -125,10 +149,40 @@ export default async function handler(req, res) {
       });
     }
 
+    // Handle specific config message types
+    if (messageType === "config/getRules") {
+      return res.status(200).json({
+        status: "success",
+        content: [],
+      });
+    }
+
+    if (messageType === "config/getTools") {
+      return res.status(200).json({
+        status: "success",
+        content: [],
+      });
+    }
+
+    if (messageType === "mcp/getStatus") {
+      return res.status(200).json({
+        status: "success",
+        content: [],
+      });
+    }
+
+    if (messageType === "config/getSlashCommands") {
+      return res.status(200).json({
+        status: "success",
+        content: [],
+      });
+    }
+
     if (
       messageType?.startsWith("config/") ||
       messageType?.startsWith("context/") ||
-      messageType?.startsWith("docs/")
+      messageType?.startsWith("docs/") ||
+      messageType?.startsWith("mcp/")
     ) {
       return res.status(200).json({
         status: "success",
