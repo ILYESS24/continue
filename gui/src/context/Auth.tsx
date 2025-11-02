@@ -23,8 +23,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const dispatch = useAppDispatch();
   const orgs = useAppSelector((store) => store.profiles.organizations);
-  const selectedProfile = useAppSelector(
-    (store) => store.profiles.selectedProfile,
+  const selectedProfileId = useAppSelector(
+    (store) => store.profiles.selectedProfileId,
   );
 
   const login = async (_useOnboarding: boolean = false) => {
@@ -50,7 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   // Ensure selectedProfile is found or default to first profile
   // Return the full profile object for compatibility with components
   const actualSelectedProfile =
-    allProfiles.find((p) => p?.id === selectedProfile) ||
+    allProfiles.find((p) => p?.id === selectedProfileId) ||
     allProfiles[0] ||
     null;
 
