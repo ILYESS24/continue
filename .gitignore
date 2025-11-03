@@ -178,3 +178,5 @@ keys
 .users_cache.json
 .vercel
 *.vercel
+.wrangler
+wrangler.toml.local
