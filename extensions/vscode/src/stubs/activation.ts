@@ -1,9 +1,9 @@
 import { EXTENSION_NAME } from "core/control-plane/env";
 import * as vscode from "vscode";
+import { RemoteConfigSync } from "./remoteConfig";
 
 // Auth removed - getUserToken stub
 const getUserToken = async () => null;
-import { RemoteConfigSync } from "./remoteConfig";
 
 export async function setupRemoteConfigSync(reloadConfig: () => void) {
   const settings = vscode.workspace.getConfiguration(EXTENSION_NAME);
