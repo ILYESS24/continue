@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: continue-app
+    env: node
+    buildCommand: bash render-build.sh
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Ajoutez vos clés API ici ou via le Dashboard Render
+      # - key: ANTHROPIC_API_KEY
+      #   value: your-key-here
+      # - key: OPENAI_API_KEY
+      #   value: your-key-here
+      # - key: GROQ_API_KEY
+      #   value: your-key-here
+      # - key: MISTRAL_API_KEY
+      #   value: your-key-here
+
