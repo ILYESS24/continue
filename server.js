@@ -5,7 +5,15 @@ const express = require("express");
 const path = require("path");
 
 const app = express();
+// Render définit automatiquement PORT, utiliser cette variable
 const PORT = process.env.PORT || 10000;
+
+// Vérifier que le port est bien défini
+if (!process.env.PORT) {
+  console.warn("⚠️  PORT environment variable not set, using default:", PORT);
+} else {
+  console.log("✅ Using PORT from environment:", process.env.PORT);
+}
 
 // Gestion d'erreur pour les handlers
 let configHandler, messageHandler;
