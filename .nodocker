@@ -1,0 +1,3 @@
+# Fichier pour indiquer à Render de ne pas utiliser Docker
+# Render doit utiliser Node.js directement avec buildCommand et startCommand
+

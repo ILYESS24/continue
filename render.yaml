@@ -4,6 +4,8 @@ services:
     env: node
     buildCommand: bash render-build.sh
     startCommand: node server.js
+    dockerfilePath: ""
+    dockerContext: ""
     envVars:
       - key: NODE_ENV
         value: production
